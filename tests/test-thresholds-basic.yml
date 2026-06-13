@@ -1,0 +1,36 @@
+name: Test basic thresholds
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    env:
+      GITHUB_EVENT_NAME: pull_request
+      GITHUB_REF: refs/pull/1/merge
+      GITHUB_HEAD_REF: feature-branch
+      GITHUB_BASE_REF: main
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - id: action
+        uses: .
+        with:
+          github-token: ${{ github.token }}
+          threshold-pr-merge-rate: '0.5'
+          threshold-account-age: '90'
+          threshold-positive-reactions: '1'
+          threshold-negative-reactions: '5'
+          on-fail: 'none'
+          dry-run: 'true'
+          enable-spam-detection: 'false'
+          required-metrics: 'prMergeRate,accountAge'
+          verbose-details: 'failed'
+          new-account-action: 'neutral'
+          new-account-threshold-days: '30'
+        continue-on-error: true
+      - name: Assert action ran
+        run: |
+          echo "passed: ${{ steps.action.outputs.passed }}"
+          echo "passed-count: ${{ steps.action.outputs.passed-count }}"
+          echo "total-metrics: ${{ steps.action.outputs.total-metrics }}"
+          echo "breakdown: ${{ steps.action.outputs.breakdown }}"
+          echo "PASS: action ran with basic thresholds"

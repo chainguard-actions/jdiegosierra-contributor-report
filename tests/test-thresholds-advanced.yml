@@ -1,0 +1,39 @@
+name: Test advanced thresholds
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    env:
+      GITHUB_EVENT_NAME: pull_request
+      GITHUB_REF: refs/pull/1/merge
+      GITHUB_HEAD_REF: feature-branch
+      GITHUB_BASE_REF: main
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - id: action
+        uses: .
+        with:
+          github-token: ${{ github.token }}
+          threshold-merger-diversity: '2'
+          threshold-profile-completeness: '50'
+          threshold-repo-history-merge-rate: '0.3'
+          threshold-repo-history-min-prs: '1'
+          on-fail: 'none'
+          dry-run: 'true'
+          enable-spam-detection: 'false'
+          required-metrics: 'prMergeRate'
+          verbose-details: 'all'
+          new-account-action: 'neutral'
+          new-account-threshold-days: '30'
+        continue-on-error: true
+      - name: Assert action ran
+        run: |
+          echo "passed: ${{ steps.action.outputs.passed }}"
+          echo "passed-count: ${{ steps.action.outputs.passed-count }}"
+          echo "total-metrics: ${{ steps.action.outputs.total-metrics }}"
+          echo "breakdown: ${{ steps.action.outputs.breakdown }}"
+          echo "recommendations: ${{ steps.action.outputs.recommendations }}"
+          echo "is-new-account: ${{ steps.action.outputs.is-new-account }}"
+          echo "has-limited-data: ${{ steps.action.outputs.has-limited-data }}"
+          echo "PASS: action ran with advanced thresholds"

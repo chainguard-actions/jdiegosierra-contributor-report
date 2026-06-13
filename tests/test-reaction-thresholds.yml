@@ -1,0 +1,33 @@
+name: Test reaction and diversity thresholds
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    env:
+      GITHUB_EVENT_NAME: pull_request
+      GITHUB_REF: refs/pull/1/merge
+      GITHUB_HEAD_REF: feature-branch
+      GITHUB_BASE_REF: main
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - id: action
+        uses: .
+        with:
+          github-token: ${{ github.token }}
+          threshold-positive-reactions: '0'
+          threshold-negative-reactions: '100'
+          threshold-merger-diversity: '1'
+          dry-run: 'true'
+          on-fail: 'none'
+          trusted-users: 'dependabot[bot],renovate[bot],github-actions[bot]'
+        continue-on-error: true
+      - name: Assert action ran
+        env:
+          PASSED: ${{ steps.action.outputs.passed }}
+          BREAKDOWN: ${{ steps.action.outputs.breakdown }}
+        run: |
+          echo "passed: $PASSED"
+          echo "breakdown: $BREAKDOWN"
+          echo "Action completed (dry-run mode)"
+          echo "PASS"

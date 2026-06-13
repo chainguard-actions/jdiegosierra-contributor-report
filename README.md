@@ -9,6 +9,7 @@ Hardened by [Chainguard](https://www.chainguard.dev) from the upstream action at
 | Version | Tag | Upstream commit |
 |---------|-----|-----------------|
 | v1.3.0 | [`v1.3.0`](https://github.com/chainguard-actions/jdiegosierra-contributor-report/tree/v1.3.0) | [`bcfc4dc`](https://github.com/jdiegosierra/contributor-report/commit/bcfc4dc20034d8c1793d41e394ee356c2dbcd0a9) |
+| v1.3.2 | [`v1.3.2`](https://github.com/chainguard-actions/jdiegosierra-contributor-report/tree/v1.3.2) | [`24b3ede`](https://github.com/jdiegosierra/contributor-report/commit/24b3edef0087d07ec2433d90243b824360ebc1c6) |
 
 ## Privacy
 

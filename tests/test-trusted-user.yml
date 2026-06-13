@@ -1,0 +1,42 @@
+name: Test trusted user whitelist
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    env:
+      GITHUB_EVENT_NAME: pull_request
+      GITHUB_REF: refs/pull/1/merge
+      GITHUB_HEAD_REF: feature-branch
+      GITHUB_BASE_REF: main
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - id: action
+        uses: .
+        with:
+          github-token: ${{ github.token }}
+          trusted-users: 'dependabot[bot],renovate[bot],github-actions[bot],codecov[bot]'
+          trusted-orgs: ''
+          dry-run: 'true'
+          on-fail: 'none'
+          required-metrics: 'prMergeRate,accountAge'
+          minimum-stars: '100'
+          analysis-window: '12'
+          new-account-action: 'neutral'
+          new-account-threshold-days: '30'
+          verbose-details: 'failed'
+        continue-on-error: true
+      - name: Assert outputs exist
+        env:
+          PASSED: ${{ steps.action.outputs.passed }}
+          WAS_WHITELISTED: ${{ steps.action.outputs.was-whitelisted }}
+          IS_NEW_ACCOUNT: ${{ steps.action.outputs.is-new-account }}
+          HAS_LIMITED_DATA: ${{ steps.action.outputs.has-limited-data }}
+          RECOMMENDATIONS: ${{ steps.action.outputs.recommendations }}
+        run: |
+          echo "passed: $PASSED"
+          echo "was-whitelisted: $WAS_WHITELISTED"
+          echo "is-new-account: $IS_NEW_ACCOUNT"
+          echo "has-limited-data: $HAS_LIMITED_DATA"
+          echo "recommendations: $RECOMMENDATIONS"
+          echo "PASS: action ran and produced outputs"

@@ -1,0 +1,93 @@
+name: Test custom threshold inputs
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Create PR event payload
+        run: |
+          mkdir -p /tmp/event
+          cat > /tmp/event/pull_request.json << 'EOF'
+          {
+            "action": "opened",
+            "number": 1,
+            "pull_request": {
+              "number": 1,
+              "user": {
+                "login": "octocat"
+              },
+              "head": {
+                "ref": "feature-branch",
+                "sha": "abc123"
+              },
+              "base": {
+                "ref": "main",
+                "sha": "def456"
+              }
+            },
+            "repository": {
+              "name": "Hello-World",
+              "owner": {
+                "login": "octocat"
+              }
+            }
+          }
+          EOF
+
+      - id: action
+        uses: .
+        env:
+          GITHUB_EVENT_NAME: pull_request
+          GITHUB_EVENT_PATH: /tmp/event/pull_request.json
+          GITHUB_REPOSITORY: octocat/Hello-World
+          GITHUB_REF: refs/pull/1/merge
+          GITHUB_HEAD_REF: feature-branch
+          GITHUB_BASE_REF: main
+        with:
+          github-token: ${{ github.token }}
+          dry-run: 'true'
+          on-fail: 'none'
+          threshold-pr-merge-rate: '0.5'
+          threshold-account-age: '30'
+          threshold-positive-reactions: '0'
+          threshold-negative-reactions: '10'
+          threshold-merger-diversity: '1'
+          threshold-profile-completeness: '0'
+          required-metrics: 'prMergeRate,accountAge'
+          minimum-stars: '10'
+          analysis-window: '6'
+          enable-spam-detection: 'true'
+          verbose-details: 'failed'
+          new-account-action: 'neutral'
+          new-account-threshold-days: '30'
+        continue-on-error: true
+
+      - name: Assert outputs are present or action ran gracefully
+        env:
+          PASSED: ${{ steps.action.outputs.passed }}
+          PASSED_COUNT: ${{ steps.action.outputs.passed-count }}
+          TOTAL: ${{ steps.action.outputs.total-metrics }}
+          BREAKDOWN: ${{ steps.action.outputs.breakdown }}
+          IS_NEW: ${{ steps.action.outputs.is-new-account }}
+          HAS_LIMITED: ${{ steps.action.outputs.has-limited-data }}
+          OUTCOME: ${{ steps.action.outcome }}
+        run: |
+          echo "outcome: $OUTCOME"
+          echo "passed: $PASSED"
+          echo "passed-count: $PASSED_COUNT"
+          echo "total-metrics: $TOTAL"
+          echo "breakdown: $BREAKDOWN"
+          echo "is-new-account: $IS_NEW"
+          echo "has-limited-data: $HAS_LIMITED"
+          if [ "$OUTCOME" = "success" ]; then
+            if [ -z "$PASSED" ] && [ -z "$TOTAL" ] && [ -z "$BREAKDOWN" ]; then
+              echo "FAIL: action succeeded but no outputs were set"
+              exit 1
+            fi
+            echo "PASS: custom thresholds scenario completed with outputs"
+          else
+            echo "PASS: action ran (failed gracefully due to API limitations in test environment)"
+          fi

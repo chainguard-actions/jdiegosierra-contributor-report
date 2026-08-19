@@ -1,0 +1,36 @@
+name: Contributor Report
+
+on:
+  pull_request:
+    branches:
+      - main
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  evaluate-contributor:
+    name: Evaluate Contributor
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+
+      - name: Evaluate Contributor Report
+        uses: ./
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          threshold-pr-merge-rate: '0.3'
+          threshold-account-age: '30'
+          required-metrics: 'prMergeRate,accountAge'
+          analysis-window: '12'
+          on-fail: comment
+          dry-run: false
+          trusted-users: dependabot[bot],renovate[bot]
+          verbose-details: 'all'

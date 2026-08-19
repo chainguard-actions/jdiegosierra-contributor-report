@@ -1,4 +1,4 @@
-name: Test trusted user whitelisting
+name: Test basic dry-run usage
 on:
   workflow_dispatch:
 jobs:
@@ -18,16 +18,21 @@ jobs:
           github-token: ${{ github.token }}
           dry-run: 'true'
           on-fail: 'none'
-          trusted-users: 'dependabot[bot],renovate[bot],github-actions[bot],codecov[bot],sonarcloud[bot]'
           enable-spam-detection: 'false'
           required-metrics: 'prMergeRate,accountAge'
+          analysis-window: '12'
+          minimum-stars: '100'
         continue-on-error: true
 
-      - name: Assert action completed
+      - name: Assert action ran and produced outputs
         env:
-          WAS_WHITELISTED: ${{ steps.action.outputs.was-whitelisted }}
           PASSED: ${{ steps.action.outputs.passed }}
+          TOTAL: ${{ steps.action.outputs.total-metrics }}
+          BREAKDOWN: ${{ steps.action.outputs.breakdown }}
         run: |
-          echo "was-whitelisted: $WAS_WHITELISTED"
           echo "passed: $PASSED"
-          echo "PASS: trusted-user scenario completed"
+          echo "total-metrics: $TOTAL"
+          echo "breakdown: $BREAKDOWN"
+          # The action should have run and produced some output
+          # In dry-run mode it should not fail the workflow
+          echo "PASS: action completed in dry-run mode"

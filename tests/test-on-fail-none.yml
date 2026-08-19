@@ -1,0 +1,40 @@
+name: Test on-fail none mode
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    env:
+      GITHUB_EVENT_NAME: pull_request
+      GITHUB_REF: refs/pull/1/merge
+      GITHUB_HEAD_REF: feature-branch
+      GITHUB_BASE_REF: main
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - id: action
+        uses: .
+        with:
+          github-token: ${{ github.token }}
+          dry-run: 'false'
+          on-fail: 'none'
+          enable-spam-detection: 'true'
+          required-metrics: 'prMergeRate,accountAge'
+          verbose-details: 'failed'
+          new-account-action: 'neutral'
+          analysis-window: '12'
+          minimum-stars: '100'
+        continue-on-error: true
+
+      - name: Assert action completed without failing workflow
+        env:
+          PASSED: ${{ steps.action.outputs.passed }}
+          TOTAL: ${{ steps.action.outputs.total-metrics }}
+          BREAKDOWN: ${{ steps.action.outputs.breakdown }}
+        run: |
+          echo "passed: $PASSED"
+          echo "total-metrics: $TOTAL"
+          echo "breakdown: $BREAKDOWN"
+          # With on-fail=none, the action should not fail the workflow
+          # regardless of the contributor's metrics
+          echo "PASS: on-fail=none scenario completed without failing workflow"

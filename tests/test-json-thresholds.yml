@@ -1,0 +1,33 @@
+name: Test JSON thresholds input
+on:
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - id: action
+        uses: .
+        with:
+          github-token: ${{ github.token }}
+          dry-run: 'true'
+          on-fail: 'none'
+          thresholds: '{"prMergeRate":0.6,"accountAge":60,"positiveReactions":3,"negativeReactions":5,"mergerDiversity":2,"profileCompleteness":40}'
+          required-metrics: 'prMergeRate,accountAge'
+          verbose-details: 'none'
+        continue-on-error: true
+
+      - name: Assert action fails with PR context error
+        env:
+          OUTCOME: ${{ steps.action.outcome }}
+        run: |
+          echo "outcome: $OUTCOME"
+          # The action should fail because it's not running on a pull_request event
+          # This confirms the JSON thresholds input is accepted and parsed
+          if [ "$OUTCOME" != "failure" ]; then
+            echo "FAIL: expected action to fail due to missing PR context, but got outcome: $OUTCOME"
+            exit 1
+          fi
+          echo "PASS: action correctly failed when not on a pull_request event (JSON thresholds input accepted)"

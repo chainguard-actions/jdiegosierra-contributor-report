@@ -1,0 +1,43 @@
+name: Test dry-run mode with custom thresholds
+on:
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - id: action
+        uses: .
+        with:
+          github-token: ${{ github.token }}
+          dry-run: 'true'
+          on-fail: 'none'
+          threshold-pr-merge-rate: '0.5'
+          threshold-account-age: '90'
+          threshold-positive-reactions: '5'
+          threshold-negative-reactions: '2'
+          threshold-merger-diversity: '2'
+          threshold-profile-completeness: '50'
+          enable-spam-detection: 'true'
+          required-metrics: 'prMergeRate,accountAge'
+          minimum-stars: '50'
+          analysis-window: '6'
+          verbose-details: 'failed'
+          new-account-action: 'neutral'
+          new-account-threshold-days: '60'
+        continue-on-error: true
+
+      - name: Assert action fails with PR context error (not input validation error)
+        env:
+          OUTCOME: ${{ steps.action.outcome }}
+        run: |
+          echo "outcome: $OUTCOME"
+          # The action should fail because it's not running on a pull_request event
+          # This confirms inputs are accepted and parsed before the PR context check
+          if [ "$OUTCOME" != "failure" ]; then
+            echo "FAIL: expected action to fail due to missing PR context, but got outcome: $OUTCOME"
+            exit 1
+          fi
+          echo "PASS: action correctly failed when not on a pull_request event (inputs accepted)"

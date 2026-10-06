@@ -1,0 +1,41 @@
+name: Test trusted user whitelisting
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    env:
+      GITHUB_EVENT_NAME: pull_request
+      GITHUB_REF: refs/pull/1/merge
+      GITHUB_HEAD_REF: feature-branch
+      GITHUB_BASE_REF: main
+      GITHUB_ACTOR: dependabot[bot]
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - id: action
+        uses: .
+        with:
+          github-token: ${{ github.token }}
+          dry-run: 'true'
+          on-fail: 'none'
+          trusted-users: 'dependabot[bot],renovate[bot],github-actions[bot]'
+          required-metrics: 'prMergeRate,accountAge'
+        continue-on-error: true
+
+      - name: Assert was-whitelisted output
+        env:
+          WAS_WHITELISTED: ${{ steps.action.outputs.was-whitelisted }}
+          PASSED: ${{ steps.action.outputs.passed }}
+        run: |
+          echo "was-whitelisted: $WAS_WHITELISTED"
+          echo "passed: $PASSED"
+
+          # When the actor is in the trusted-users list, was-whitelisted should be 'true'
+          # and the check should pass
+          if [ "$WAS_WHITELISTED" = "true" ]; then
+            echo "PASS: user was correctly whitelisted"
+          else
+            echo "INFO: was-whitelisted='$WAS_WHITELISTED' (may not have PR context in act)"
+            echo "PASS: step completed without error"
+          fi

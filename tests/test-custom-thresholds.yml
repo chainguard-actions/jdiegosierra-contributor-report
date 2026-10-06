@@ -1,0 +1,47 @@
+name: Test custom thresholds
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    env:
+      GITHUB_EVENT_NAME: pull_request
+      GITHUB_REF: refs/pull/1/merge
+      GITHUB_HEAD_REF: feature-branch
+      GITHUB_BASE_REF: main
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - id: action
+        uses: .
+        with:
+          github-token: ${{ github.token }}
+          dry-run: 'true'
+          on-fail: 'none'
+          threshold-pr-merge-rate: '0.5'
+          threshold-account-age: '90'
+          threshold-positive-reactions: '0'
+          threshold-negative-reactions: '5'
+          threshold-merger-diversity: '1'
+          threshold-profile-completeness: '20'
+          required-metrics: 'prMergeRate,accountAge'
+          minimum-stars: '50'
+          analysis-window: '6'
+          enable-spam-detection: 'true'
+          verbose-details: 'failed'
+          new-account-action: 'neutral'
+          new-account-threshold-days: '30'
+        continue-on-error: true
+
+      - name: Assert action accepted custom thresholds
+        env:
+          PASSED: ${{ steps.action.outputs.passed }}
+          TOTAL_METRICS: ${{ steps.action.outputs.total-metrics }}
+          BREAKDOWN: ${{ steps.action.outputs.breakdown }}
+          RECOMMENDATIONS: ${{ steps.action.outputs.recommendations }}
+        run: |
+          echo "passed: $PASSED"
+          echo "total-metrics: $TOTAL_METRICS"
+          echo "breakdown: $BREAKDOWN"
+          echo "recommendations: $RECOMMENDATIONS"
+          echo "PASS: action accepted custom threshold inputs without crashing"

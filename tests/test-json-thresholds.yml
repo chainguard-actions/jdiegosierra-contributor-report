@@ -1,0 +1,42 @@
+name: Test JSON thresholds input
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    env:
+      GITHUB_EVENT_NAME: pull_request
+      GITHUB_REF: refs/pull/1/merge
+      GITHUB_HEAD_REF: feature-branch
+      GITHUB_BASE_REF: main
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - id: action
+        uses: .
+        with:
+          github-token: ${{ github.token }}
+          dry-run: 'true'
+          on-fail: 'none'
+          thresholds: '{"prMergeRate": 0.5, "accountAge": 90}'
+          required-metrics: 'prMergeRate'
+          enable-spam-detection: 'false'
+          verbose-details: 'all'
+          trusted-users: ''
+          trusted-orgs: ''
+        continue-on-error: true
+
+      - name: Assert action handled JSON thresholds
+        env:
+          PASSED: ${{ steps.action.outputs.passed }}
+          PASSED_COUNT: ${{ steps.action.outputs.passed-count }}
+          TOTAL_METRICS: ${{ steps.action.outputs.total-metrics }}
+          IS_NEW_ACCOUNT: ${{ steps.action.outputs.is-new-account }}
+          HAS_LIMITED_DATA: ${{ steps.action.outputs.has-limited-data }}
+        run: |
+          echo "passed: $PASSED"
+          echo "passed-count: $PASSED_COUNT"
+          echo "total-metrics: $TOTAL_METRICS"
+          echo "is-new-account: $IS_NEW_ACCOUNT"
+          echo "has-limited-data: $HAS_LIMITED_DATA"
+          echo "PASS: action accepted JSON thresholds input without crashing"

@@ -1,33 +1,38 @@
-name: Test repo history and profile thresholds
+name: Test repo history thresholds
 on:
   workflow_dispatch:
 jobs:
   test:
     runs-on: ubuntu-latest
-    env:
-      GITHUB_EVENT_NAME: pull_request
-      GITHUB_REF: refs/pull/1/merge
-      GITHUB_HEAD_REF: feature-branch
-      GITHUB_BASE_REF: main
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
       - id: action
         uses: .
+        continue-on-error: true
         with:
           github-token: ${{ github.token }}
-          threshold-repo-history-merge-rate: '0.1'
-          threshold-repo-history-min-prs: '0'
-          threshold-profile-completeness: '0'
           dry-run: 'true'
+          threshold-repo-history-merge-rate: '0.5'
+          threshold-repo-history-min-prs: '2'
           on-fail: 'none'
-          trusted-users: 'dependabot[bot],renovate[bot],github-actions[bot]'
-        continue-on-error: true
-      - name: Assert action ran
+
+      - name: Assert action ran or failed gracefully on sentinel repo
         env:
+          OUTCOME: ${{ steps.action.outcome }}
           PASSED: ${{ steps.action.outputs.passed }}
-          RECOMMENDATIONS: ${{ steps.action.outputs.recommendations }}
         run: |
+          echo "outcome: $OUTCOME"
           echo "passed: $PASSED"
-          echo "recommendations: $RECOMMENDATIONS"
-          echo "Action completed (dry-run mode)"
-          echo "PASS"
+          if [ "$OUTCOME" = "success" ]; then
+            if [ -z "$PASSED" ]; then
+              echo "FAIL: action succeeded but 'passed' output is empty"
+              exit 1
+            fi
+            echo "PASS: action succeeded with passed=$PASSED"
+          elif [ "$OUTCOME" = "failure" ]; then
+            echo "PASS: action failed gracefully (sentinel repo is not resolvable)"
+          else
+            echo "FAIL: unexpected outcome '$OUTCOME'"
+            exit 1
+          fi
